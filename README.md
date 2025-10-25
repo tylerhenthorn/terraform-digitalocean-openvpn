@@ -38,7 +38,7 @@ In your workspace, go to **Variables** and add:
 - **Sensitive**: ✓ (check this box)
 
 To get your DigitalOcean API token:
-1. Log in to DigitalOcean
+1. Log in to [DigitalOcean](https://www.digitalocean.com)
 2. Go to **API** → **Tokens/Keys**
 3. Generate a new token with read/write access
 
@@ -53,12 +53,6 @@ terraform login
 Follow the prompts to authenticate with Terraform Cloud.
 
 ### 5. Update Terraform Configuration
-
-Create a `terraform.tfvars` file with your DigitalOcean token:
-
-```hcl
-do_token = "your-digitalocean-api-token-here"
-```
 
 Update the `terraform` block in your configuration to use your Terraform Cloud workspace:
 
