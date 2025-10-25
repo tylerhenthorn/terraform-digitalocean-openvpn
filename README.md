@@ -1,6 +1,10 @@
 # terraform-digitalocean-openvpn
 
-Deploys a VPN server. `make` creates the server and the client configuration file, `make destroy` deletes it. Uses Terraform Cloud for state management and execution, and DigitalOcean for hosting. 
+Quickly deploys a VPN server using Terraform Cloud and DigitalOcean.  
+
+A simple `make` creates the server and the client config, and `make destroy` deletes it.  
+
+DigitalOcean is fast, and if you destroy after using it costs almost nothing.  
 
 ## Prerequisites
 
