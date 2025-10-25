@@ -164,7 +164,3 @@ To destroy all resources and avoid charges:
 ```bash
 make destroy
 ```
-
-## License
-
-MIT
