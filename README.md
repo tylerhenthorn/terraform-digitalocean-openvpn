@@ -42,19 +42,9 @@ To get your DigitalOcean API token:
 2. Go to **API** → **Tokens/Keys**
 3. Generate a new token with read/write access
 
-### 4. Configure Terraform Cloud Authentication
+### 4. Update Terraform Configuration
 
-On your local machine:
-
-```bash
-terraform login
-```
-
-Follow the prompts to authenticate with Terraform Cloud.
-
-### 5. Update Terraform Configuration
-
-Update the `terraform` block in your configuration to use your Terraform Cloud workspace:
+Edit the `backend.tf` with your Terraform Cloud organization and workspace:
 
 ```hcl
 terraform {
@@ -67,6 +57,16 @@ terraform {
   }
 }
 ```
+
+### 5. Configure Terraform Cloud Authentication
+
+On your local machine:
+
+```bash
+terraform login
+```
+
+Follow the prompts to authenticate with Terraform Cloud.
 
 ## Deployment
 
