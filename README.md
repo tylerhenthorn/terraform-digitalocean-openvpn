@@ -4,7 +4,7 @@ Quickly deploys a VPN server using Terraform Cloud and DigitalOcean.
 
 A simple `make` creates the server and the client config, and `make destroy` deletes it.  
 
-DigitalOcean is fast, and if you destroy after using it costs almost nothing.  
+DigitalOcean is fast, and if you destroy after using, it costs almost nothing.  
 
 ## Prerequisites
 
