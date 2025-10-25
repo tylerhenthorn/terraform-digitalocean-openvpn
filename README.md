@@ -159,7 +159,7 @@ Common DigitalOcean regions:
 
 ## Cleanup
 
-To destroy all resources and avoid charges:
+To destroy all resources:
 
 ```bash
 make destroy
