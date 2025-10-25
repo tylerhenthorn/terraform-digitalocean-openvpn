@@ -1,0 +1,30 @@
+# Terraform files
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+terraform.tfvars
+*.auto.tfvars
+
+# SSH keys and certificates
+*.pem
+*.key
+*.pub
+openvpn-ssh*
+
+# OpenVPN client configurations
+*.ovpn
+
+# Mac OS
+.DS_Store
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Claude AI
+.claude/
+CLAUDE.md

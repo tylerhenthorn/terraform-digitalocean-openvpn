@@ -1,0 +1,152 @@
+#cloud-config
+package_update: true
+package_upgrade: true
+packages:
+  - openvpn
+  - easy-rsa
+  - iptables-persistent
+  - curl
+
+runcmd:
+  # Set up Easy RSA and generate all certificates
+  - |
+    set -e
+
+    # Create Easy-RSA directory
+    make-cadir /etc/openvpn/easy-rsa
+    cd /etc/openvpn/easy-rsa
+
+    # Configure Easy RSA vars
+    cat > vars << EOF
+    set_var EASYRSA_REQ_COUNTRY    "US"
+    set_var EASYRSA_REQ_PROVINCE   "NY"
+    set_var EASYRSA_REQ_CITY       "New York"
+    set_var EASYRSA_REQ_ORG        "OpenVPN"
+    set_var EASYRSA_REQ_EMAIL      "admin@example.com"
+    set_var EASYRSA_REQ_OU         "OpenVPN"
+    set_var EASYRSA_KEY_SIZE       2048
+    set_var EASYRSA_ALGO           rsa
+    set_var EASYRSA_CA_EXPIRE      3650
+    set_var EASYRSA_CERT_EXPIRE    3650
+    set_var EASYRSA_REQ_CN         "OpenVPN-CA"
+    set_var EASYRSA_BATCH          "yes"
+    EOF
+
+    # Source vars and run in batch mode
+    export EASYRSA_BATCH=yes
+
+    # Initialize PKI
+    ./easyrsa init-pki
+
+    # Build CA
+    ./easyrsa --batch build-ca nopass
+
+    # Generate DH parameters
+    ./easyrsa gen-dh
+
+    # Build server certificate
+    ./easyrsa --batch build-server-full server nopass
+
+    # Build client certificate
+    ./easyrsa --batch build-client-full ${client_name} nopass
+
+    # Generate TLS auth key
+    openvpn --genkey secret /etc/openvpn/ta.key
+
+    # Copy certificates and keys
+    cp /etc/openvpn/easy-rsa/pki/ca.crt /etc/openvpn/
+    cp /etc/openvpn/easy-rsa/pki/issued/server.crt /etc/openvpn/
+    cp /etc/openvpn/easy-rsa/pki/private/server.key /etc/openvpn/
+    cp /etc/openvpn/easy-rsa/pki/dh.pem /etc/openvpn/
+
+  # Get public IP
+  - |
+    PUBLIC_IP=$(curl -s ifconfig.me)
+
+  # Create server configuration
+  - |
+    cat > /etc/openvpn/server.conf << EOF
+    port ${openvpn_port}
+    proto ${openvpn_protocol}
+    dev tun
+    ca ca.crt
+    cert server.crt
+    key server.key
+    dh dh.pem
+    server 10.8.0.0 255.255.255.0
+    ifconfig-pool-persist ipp.txt
+    push "redirect-gateway def1 bypass-dhcp"
+    push "dhcp-option DNS 8.8.8.8"
+    push "dhcp-option DNS 8.8.4.4"
+    keepalive 10 120
+    tls-auth ta.key 0
+    cipher AES-256-CBC
+    auth SHA256
+    user nobody
+    group nogroup
+    persist-key
+    persist-tun
+    status /var/log/openvpn-status.log
+    log /var/log/openvpn.log
+    verb 3
+    explicit-exit-notify 1
+    EOF
+
+  # Enable IP forwarding
+  - |
+    echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf
+    sysctl -p
+
+  # Configure iptables
+  - |
+    iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE
+    iptables -A FORWARD -s 10.8.0.0/24 -j ACCEPT
+    iptables -A FORWARD -d 10.8.0.0/24 -j ACCEPT
+    netfilter-persistent save
+
+  # Start OpenVPN
+  - |
+    systemctl enable openvpn@server
+    systemctl start openvpn@server
+
+  # Create client configuration
+  - |
+    PUBLIC_IP=$(curl -s ifconfig.me)
+
+    cat > /root/${client_name}.ovpn << EOF
+    client
+    dev tun
+    proto ${openvpn_protocol}
+    remote $PUBLIC_IP ${openvpn_port}
+    resolv-retry infinite
+    nobind
+    user nobody
+    group nogroup
+    persist-key
+    persist-tun
+    remote-cert-tls server
+    cipher AES-256-CBC
+    auth SHA256
+    verb 3
+    key-direction 1
+
+    <ca>
+    $(cat /etc/openvpn/ca.crt)
+    </ca>
+
+    <cert>
+    $(cat /etc/openvpn/easy-rsa/pki/issued/${client_name}.crt)
+    </cert>
+
+    <key>
+    $(cat /etc/openvpn/easy-rsa/pki/private/${client_name}.key)
+    </key>
+
+    <tls-auth>
+    $(cat /etc/openvpn/ta.key)
+    </tls-auth>
+    EOF
+
+    chmod 600 /root/${client_name}.ovpn
+
+final_message: "OpenVPN server installation complete!"
